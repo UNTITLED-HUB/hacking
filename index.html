@@ -161,18 +161,19 @@
         <button onclick="goToStep('step-recaptcha-general')">계정 복구하기</button>
     </div>
 
-    <!-- 2. 일반 reCAPTCHA -->
+    <!-- 2. 1차 reCAPTCHA -->
     <div id="step-recaptcha-general" class="view-step">
-        <h2>reCAPTCHA 일반 인증</h2>
+        <h2>1차 reCAPTCHA 인증</h2>
         <div class="captcha-container">
             <div id="recaptcha-gen-target"></div>
         </div>
         <button onclick="verifyRecaptchaGen()">다음</button>
     </div>
 
-    <!-- 3. 보안 reCAPTCHA -->
+    <!-- 3. 2차 보안 reCAPTCHA -->
     <div id="step-recaptcha-secure" class="view-step">
-        <h2>reCAPTCHA 보안 인증</h2>
+        <h2>2차 보안 reCAPTCHA 인증</h2>
+        <p style="font-size: 0.8em; color: #aaa; margin-bottom: 10px;">보안 강화를 위해 2차 reCAPTCHA를 한 번 더 완료해주세요.</p>
         <div class="captcha-container">
             <div id="recaptcha-sec-target"></div>
         </div>
@@ -295,10 +296,8 @@
         let recaptchaSecWidgetId = null;
         let hcaptchaWidgetId = null;
 
-        // 정상 동작하는 공통 reCAPTCHA 사이트 키
         const WORKING_RECAPTCHA_SITEKEY = '6LeacSwtAAAAAF1EbG2lZlzJJqFIOMjiw_g8QEQJ';
 
-        // 동적 스크립트 로더
         function loadRecaptchaScript() {
             return new Promise((resolve) => {
                 if (window.grecaptcha && window.grecaptcha.render) {
@@ -329,7 +328,6 @@
             });
         }
 
-        // 캡챠 완료 검증 로직
         function verifyRecaptchaGen() {
             if (recaptchaGenWidgetId === null || typeof grecaptcha === 'undefined') {
                 alert("reCAPTCHA 로딩 중입니다.");
@@ -337,7 +335,7 @@
             }
             const response = grecaptcha.getResponse(recaptchaGenWidgetId);
             if (!response || response.length === 0) {
-                alert("reCAPTCHA 인증을 완료해 주세요!");
+                alert("1차 reCAPTCHA 인증을 완료해 주세요!");
                 return;
             }
             goToStep('step-recaptcha-secure');
@@ -350,13 +348,12 @@
             }
             const response = grecaptcha.getResponse(recaptchaSecWidgetId);
             if (!response || response.length === 0) {
-                alert("보안 reCAPTCHA 인증을 완료해 주세요!");
+                alert("2차 보안 reCAPTCHA 인증을 완료해 주세요!");
                 return;
             }
             goToStep('step-jcaptcha');
         }
 
-        // jCAPTCHA 콜백
         window.jcaptchaOnSuccess = function(data) {
             goToStep('step-email');
         };
@@ -378,43 +375,53 @@
 
         async function goToStep(stepId) {
             document.querySelectorAll('.view-step').forEach(el => el.classList.remove('active'));
-            document.getElementById(stepId).classList.add('active');
+            const targetEl = document.getElementById(stepId);
+            if (targetEl) targetEl.classList.add('active');
 
-            if (stepId === 'step-recaptcha-general') {
-                await loadRecaptchaScript();
-                const target = document.getElementById('recaptcha-gen-target');
-                if (target && target.children.length === 0) {
-                    recaptchaGenWidgetId = grecaptcha.render('recaptcha-gen-target', {
-                        'sitekey': WORKING_RECAPTCHA_SITEKEY
-                    });
+            // DOM 디스플레이 갱신 후 캡챠 렌더링 (display: none 로딩 오류 방지)
+            setTimeout(async () => {
+                if (stepId === 'step-recaptcha-general') {
+                    await loadRecaptchaScript();
+                    const target = document.getElementById('recaptcha-gen-target');
+                    if (target && target.children.length === 0) {
+                        recaptchaGenWidgetId = grecaptcha.render('recaptcha-gen-target', {
+                            'sitekey': WORKING_RECAPTCHA_SITEKEY
+                        });
+                    } else if (recaptchaGenWidgetId !== null) {
+                        grecaptcha.reset(recaptchaGenWidgetId);
+                    }
+                } else if (stepId === 'step-recaptcha-secure') {
+                    await loadRecaptchaScript();
+                    const target = document.getElementById('recaptcha-sec-target');
+                    if (target && target.children.length === 0) {
+                        recaptchaSecWidgetId = grecaptcha.render('recaptcha-sec-target', {
+                            'sitekey': WORKING_RECAPTCHA_SITEKEY
+                        });
+                    } else if (recaptchaSecWidgetId !== null) {
+                        grecaptcha.reset(recaptchaSecWidgetId);
+                    }
+                } else if (stepId === 'step-email') {
+                    await loadHcaptchaScript();
+                    const target = document.getElementById('hcaptcha-target');
+                    if (target && target.children.length === 0) {
+                        hcaptchaWidgetId = hcaptcha.render('hcaptcha-target', {
+                            'sitekey': '51d4351e-d9dc-4adc-abc0-af60f6eeb860'
+                        });
+                    } else if (hcaptchaWidgetId !== null) {
+                        hcaptcha.reset(hcaptchaWidgetId);
+                    }
+                } else if (stepId === 'step-form') {
+                    generateCaptcha();
+                } else if (stepId === 'step-dialogue') {
+                    document.getElementById('dialogue-input-group').style.display = 'block';
+                    document.getElementById('chat-result-box').style.display = 'none';
+                    document.getElementById('ai-loading').style.display = 'none';
+                    document.getElementById('user-question-input').value = '';
+                    document.getElementById('ask-btn').disabled = false;
+                } else if (stepId === 'step-processing') {
+                    startProcessing();
                 }
-            } else if (stepId === 'step-recaptcha-secure') {
-                await loadRecaptchaScript();
-                const target = document.getElementById('recaptcha-sec-target');
-                if (target && target.children.length === 0) {
-                    recaptchaSecWidgetId = grecaptcha.render('recaptcha-sec-target', {
-                        'sitekey': WORKING_RECAPTCHA_SITEKEY
-                    });
-                }
-            } else if (stepId === 'step-email') {
-                await loadHcaptchaScript();
-                const target = document.getElementById('hcaptcha-target');
-                if (target && target.children.length === 0) {
-                    hcaptchaWidgetId = hcaptcha.render('hcaptcha-target', {
-                        'sitekey': '51d4351e-d9dc-4adc-abc0-af60f6eeb860'
-                    });
-                }
-            } else if (stepId === 'step-form') {
-                generateCaptcha();
-            } else if (stepId === 'step-dialogue') {
-                document.getElementById('dialogue-input-group').style.display = 'block';
-                document.getElementById('chat-result-box').style.display = 'none';
-                document.getElementById('ai-loading').style.display = 'none';
-                document.getElementById('user-question-input').value = '';
-                document.getElementById('ask-btn').disabled = false;
-            } else if (stepId === 'step-processing') {
-                startProcessing();
-            }
+            }, 50);
         }
 
         function askChoimini() {
