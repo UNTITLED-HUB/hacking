@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>이 계정이 해킹안되었습니다 ㅋ</title>
+    <title>해킹 시뮬레이터</title>
     <!-- jCAPTCHA -->
     <script src="https://cdn.jsdelivr.net/gh/UNTITLED-HUB/choimin@main/jcaptcha.min.js"></script>
     <!-- 인터랙티브 지도 (Leaflet) -->
@@ -295,6 +295,9 @@
         let recaptchaSecWidgetId = null;
         let hcaptchaWidgetId = null;
 
+        // 정상 동작하는 공통 reCAPTCHA 사이트 키
+        const WORKING_RECAPTCHA_SITEKEY = '6LeacSwtAAAAAF1EbG2lZlzJJqFIOMjiw_g8QEQJ';
+
         // 동적 스크립트 로더
         function loadRecaptchaScript() {
             return new Promise((resolve) => {
@@ -382,7 +385,7 @@
                 const target = document.getElementById('recaptcha-gen-target');
                 if (target && target.children.length === 0) {
                     recaptchaGenWidgetId = grecaptcha.render('recaptcha-gen-target', {
-                        'sitekey': '6LeacSwtAAAAAF1EbG2lZlzJJqFIOMjiw_g8QEQJ'
+                        'sitekey': WORKING_RECAPTCHA_SITEKEY
                     });
                 }
             } else if (stepId === 'step-recaptcha-secure') {
@@ -390,7 +393,7 @@
                 const target = document.getElementById('recaptcha-sec-target');
                 if (target && target.children.length === 0) {
                     recaptchaSecWidgetId = grecaptcha.render('recaptcha-sec-target', {
-                        'sitekey': '6LeacSwtAAAAAAXhzSrFvlQP5ZLeZtOWU8Ch-URp'
+                        'sitekey': WORKING_RECAPTCHA_SITEKEY
                     });
                 }
             } else if (stepId === 'step-email') {
