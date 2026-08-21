@@ -161,26 +161,16 @@
         <button onclick="goToStep('step-recaptcha-general')">계정 복구하기</button>
     </div>
 
-    <!-- 2. 1차 reCAPTCHA -->
+    <!-- 2. reCAPTCHA 인증 (단일 단계) -->
     <div id="step-recaptcha-general" class="view-step">
-        <h2>1차 reCAPTCHA 인증</h2>
+        <h2>reCAPTCHA 인증</h2>
         <div class="captcha-container">
             <div id="recaptcha-gen-target"></div>
         </div>
         <button onclick="verifyRecaptchaGen()">다음</button>
     </div>
 
-    <!-- 3. 2차 보안 reCAPTCHA -->
-    <div id="step-recaptcha-secure" class="view-step">
-        <h2>2차 보안 reCAPTCHA 인증</h2>
-        <p style="font-size: 0.8em; color: #aaa; margin-bottom: 10px;">보안 강화를 위해 2차 reCAPTCHA를 한 번 더 완료해주세요.</p>
-        <div class="captcha-container">
-            <div id="recaptcha-sec-target"></div>
-        </div>
-        <button onclick="verifyRecaptchaSec()">다음</button>
-    </div>
-
-    <!-- 4. jCAPTCHA -->
+    <!-- 3. jCAPTCHA -->
     <div id="step-jcaptcha" class="view-step">
         <h2>jCAPTCHA 인증</h2>
         <div class="captcha-container">
@@ -188,7 +178,7 @@
         </div>
     </div>
 
-    <!-- 5. 이메일 검증 및 hCAPTCHA -->
+    <!-- 4. 이메일 검증 및 hCAPTCHA -->
     <div id="step-email" class="view-step">
         <h2>이메일 인증</h2>
         <input type="email" id="email-input" placeholder="example@chmail.com">
@@ -201,7 +191,7 @@
         <button onclick="tryEmailCheck()">복구 시도</button>
     </div>
 
-    <!-- 6. 개인정보 입력 양식 -->
+    <!-- 5. 개인정보 입력 양식 -->
     <div id="step-form" class="view-step">
         <h2>계정 복구</h2>
         
@@ -236,7 +226,7 @@
         <button onclick="submitFinalForm()">확인</button>
     </div>
 
-    <!-- 7. Choimini AI 대화 -->
+    <!-- 6. Choimini AI 대화 -->
     <div id="step-dialogue" class="view-step">
         <h1>Choimini AI</h1>
         <p>무엇이든 질문하세요. AI가 보안 분석을 제공합니다.</p>
@@ -257,7 +247,7 @@
         </div>
     </div>
 
-    <!-- 8. 코드 입력 -->
+    <!-- 7. 코드 입력 -->
     <div id="step-auth-code" class="view-step">
         <p>계정 복구를 위해 등록한 전화번호로 인증번호 4자리를 안 보냈어요</p>
         <div class="form-group">
@@ -266,7 +256,7 @@
         <button onclick="submitAuthCode()">다음</button>
     </div>
 
-    <!-- 9. 복구 시도중 -->
+    <!-- 8. 복구 시도중 -->
     <div id="step-processing" class="view-step">
         <p>계정 복구 시도중...</p>
         <div style="width:100%; height:20px; background:#222; border:1px solid #0f0; margin:15px 0;">
@@ -293,7 +283,6 @@
         let mapMarker = null;
 
         let recaptchaGenWidgetId = null;
-        let recaptchaSecWidgetId = null;
         let hcaptchaWidgetId = null;
 
         const WORKING_RECAPTCHA_SITEKEY = '6LeacSwtAAAAAF1EbG2lZlzJJqFIOMjiw_g8QEQJ';
@@ -335,20 +324,7 @@
             }
             const response = grecaptcha.getResponse(recaptchaGenWidgetId);
             if (!response || response.length === 0) {
-                alert("1차 reCAPTCHA 인증을 완료해 주세요!");
-                return;
-            }
-            goToStep('step-recaptcha-secure');
-        }
-
-        function verifyRecaptchaSec() {
-            if (recaptchaSecWidgetId === null || typeof grecaptcha === 'undefined') {
-                alert("reCAPTCHA 로딩 중입니다.");
-                return;
-            }
-            const response = grecaptcha.getResponse(recaptchaSecWidgetId);
-            if (!response || response.length === 0) {
-                alert("2차 보안 reCAPTCHA 인증을 완료해 주세요!");
+                alert("reCAPTCHA 인증을 완료해 주세요!");
                 return;
             }
             goToStep('step-jcaptcha');
@@ -378,7 +354,6 @@
             const targetEl = document.getElementById(stepId);
             if (targetEl) targetEl.classList.add('active');
 
-            // DOM 디스플레이 갱신 후 캡챠 렌더링 (display: none 로딩 오류 방지)
             setTimeout(async () => {
                 if (stepId === 'step-recaptcha-general') {
                     await loadRecaptchaScript();
@@ -389,16 +364,6 @@
                         });
                     } else if (recaptchaGenWidgetId !== null) {
                         grecaptcha.reset(recaptchaGenWidgetId);
-                    }
-                } else if (stepId === 'step-recaptcha-secure') {
-                    await loadRecaptchaScript();
-                    const target = document.getElementById('recaptcha-sec-target');
-                    if (target && target.children.length === 0) {
-                        recaptchaSecWidgetId = grecaptcha.render('recaptcha-sec-target', {
-                            'sitekey': WORKING_RECAPTCHA_SITEKEY
-                        });
-                    } else if (recaptchaSecWidgetId !== null) {
-                        grecaptcha.reset(recaptchaSecWidgetId);
                     }
                 } else if (stepId === 'step-email') {
                     await loadHcaptchaScript();
